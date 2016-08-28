@@ -9,6 +9,8 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
+#include "Estrutura.h"
+
 //----------------------------------- [CONSTANTS] ------------------------------------
 #define MaxMonsters 10
 #define MaxClients 10
@@ -23,13 +25,16 @@
 #define N_MAX_LEITORES 10
 #define TAM 256
 
+#define PIPE_SERVER_CLIENT TEXT("\\\\.\\pipe\\pipe1")
+#define PIPE_CLIENT_SERVER TEXT("\\\\.\\pipe\\pipe2")
+
 
 //---------------------------------- [HANDLES and VARIABLES] ------------------------------
 HANDLE PipeLeitores[N_MAX_LEITORES];
 int total;
 BOOL fim = FALSE;
 
-HANDLE hPipe, hPipe2;
+HANDLE hPipeSC, hPipeCS;
 #define PIPE_NAME TEXT("\\\\.\\pipe\\teste")
 
 //DWORD WINAPI RecebeLeitores(LPVOID param);  //??
@@ -51,5 +56,6 @@ void ResetClient(int i);
 void addClient(HANDLE HClient);
 void RemoveClient(HANDLE HClient);
 
-int writeClienteASINC(HANDLE hPipe, Msg msg);
-int BroadcastClients(Msg msg);
+//int writeClienteASINC(HANDLE hPipe, Msg msg);
+//
+//int BroadcastClients(Msg msg);

@@ -18,6 +18,8 @@ typedef struct {		//Estrutura que define as caracteristicas de cada um dos jogad
 	DWORD Identification;
 	//DWORD bi;  //				{WHAT IS IT?}
 
+	DWORD NextMovement;
+
 } Client;
 
 typedef struct {

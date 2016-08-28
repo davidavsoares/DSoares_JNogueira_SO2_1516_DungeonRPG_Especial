@@ -10,6 +10,9 @@
 #define QUEMSZ 60
 #define MSGTXTSZ 60
 
+#define PIPE_SERVER_CLIENT TEXT("\\\\.\\pipe\\pipe1")
+#define PIPE_CLIENT_SERVER TEXT("\\\\.\\pipe\\pipe2")
+
 typedef struct {
 	TCHAR quem[QUEMSZ];
 	TCHAR msg[MSGTXTSZ];
@@ -141,10 +144,10 @@ int ReaderAlive = 0;
 
 int _tmain(int argc, TCHAR *argv[])
 {
-	HANDLE hPipe;
+	HANDLE hPipeSC, hPipeCS;
 	BOOL fSuccess = FALSE;
 	DWORD cbWritten, dwMode;
-	LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\pipeexemplo");
+	//LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\pipeexemplo");
 
 	Msg MsgToSend;
 	HANDLE hThread;
@@ -157,16 +160,30 @@ int _tmain(int argc, TCHAR *argv[])
 
 	while (1)
 	{
-		hPipe = CreateFile(
-			lpszPipename,
-			GENERIC_READ | GENERIC_WRITE,
-			0 | FILE_SHARE_READ | FILE_SHARE_WRITE,
+		hPipeSC = CreateFile(
+			PIPE_SERVER_CLIENT,
+			GENERIC_READ,
+			0 /*| FILE_SHARE_READ | FILE_SHARE_WRITE*/,
 			NULL,
 			OPEN_EXISTING,
-			0 | FILE_FLAG_OVERLAPPED,
+			FILE_ATTRIBUTE_NORMAL/*0 | FILE_FLAG_OVERLAPPED*/,
 			NULL);
 
-		if (hPipe != INVALID_HANDLE_VALUE)
+		if (hPipeSC != INVALID_HANDLE_VALUE)
+		{
+			break;
+		}
+
+		hPipeCS = CreateFile(
+			PIPE_CLIENT_SERVER,
+			GENERIC_WRITE,
+			0/* | FILE_SHARE_READ | FILE_SHARE_WRITE*/,
+			NULL,
+			OPEN_EXISTING,
+			FILE_ATTRIBUTE_NORMAL/*0 | FILE_FLAG_OVERLAPPED*/,
+			NULL);
+
+		if (hPipeCS != INVALID_HANDLE_VALUE)
 		{
 			break;
 		}
@@ -178,33 +195,33 @@ int _tmain(int argc, TCHAR *argv[])
 			return -1;
 		}
 
-		if (!WaitNamedPipe(lpszPipename, 30000))
+		if (!WaitNamedPipe(PIPE_SERVER_CLIENT, 30000))
 		{
 			_tprintf(TEXT("\nEsperei por uma instância durante 30 segundos. Desisto. Sair"));
 			pressEnter();
 			return -1;
 		}
 	}
+	//_-----------------------------------QUANDO ISTO NAO STAVA COMENTADO NAO FUNCIONAVA; DAVA: SetNamedPipeHandleState falhou. Erro = 5
+	//dwMode = PIPE_READMODE_MESSAGE;
+	//fSuccess = SetNamedPipeHandleState(
+	//	hPipeSC,
+	//	&dwMode,
+	//	NULL,
+	//	NULL);
 
-	dwMode = PIPE_READMODE_MESSAGE;
-	fSuccess = SetNamedPipeHandleState(
-		hPipe,
-		&dwMode,
-		NULL,
-		NULL);
-
-	if (!fSuccess)
-	{
-		_tprintf(TEXT("\nSetNamedPipeHandleState falhou. Erro = %d\n"), GetLastError());
-		pressEnter();
-		return -1;
-	}
+	//if (!fSuccess)
+	//{
+	//	_tprintf(TEXT("\nSetNamedPipeHandleState falhou. Erro = %d\n"), GetLastError());
+	//	pressEnter();
+	//	return -1;
+	//}
 
 	hThread = CreateThread(
 		NULL,
 		0,
 		ThreadClienteReader,
-		(LPVOID)hPipe,
+		(LPVOID)hPipeSC,
 		0,
 		&dwThreadId);
 
@@ -248,7 +265,7 @@ int _tmain(int argc, TCHAR *argv[])
 		OverlWr.hEvent = WriteReady;
 
 		fSuccess = WriteFile(
-			hPipe,
+			hPipeSC/*hPipeSC*/,
 			&MsgToSend,
 			Msg_Sz,
 			&cbWritten,
@@ -257,7 +274,7 @@ int _tmain(int argc, TCHAR *argv[])
 		WaitForSingleObject(WriteReady, INFINITE);
 		_tprintf(TEXT("\nWrite concluido"));
 
-		GetOverlappedResult(hPipe, &OverlWr, &cbWritten, FALSE);
+		GetOverlappedResult(hPipeSC/*hPipeSC*/, &OverlWr, &cbWritten, FALSE);
 		if (cbWritten < Msg_Sz)
 		{
 			_tprintf(TEXT("\nWriteFile TALVEZ falhou. Erro = %d"), GetLastError());
@@ -275,7 +292,7 @@ int _tmain(int argc, TCHAR *argv[])
 	_tprintf(TEXT("\nCliente vai terminar ligação e sair"));
 
 	CloseHandle(WriteReady);
-	CloseHandle(hPipe);
+	CloseHandle(hPipeSC);
 	pressEnter();
 	return 0;
 }
