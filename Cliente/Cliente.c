@@ -265,7 +265,7 @@ int _tmain(int argc, TCHAR *argv[])
 		OverlWr.hEvent = WriteReady;
 
 		fSuccess = WriteFile(
-			hPipeSC/*hPipeSC*/,
+			hPipeCS/*hPipeSC*/,
 			&MsgToSend,
 			Msg_Sz,
 			&cbWritten,
@@ -274,7 +274,7 @@ int _tmain(int argc, TCHAR *argv[])
 		WaitForSingleObject(WriteReady, INFINITE);
 		_tprintf(TEXT("\nWrite concluido"));
 
-		GetOverlappedResult(hPipeSC/*hPipeSC*/, &OverlWr, &cbWritten, FALSE);
+		GetOverlappedResult(hPipeCS/*hPipeSC*/, &OverlWr, &cbWritten, FALSE);
 		if (cbWritten < Msg_Sz)
 		{
 			_tprintf(TEXT("\nWriteFile TALVEZ falhou. Erro = %d"), GetLastError());
